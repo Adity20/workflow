@@ -1,0 +1,76 @@
+name: Remove 'agenda' label from discussion
+
+on:
+  workflow_dispatch:
+
+jobs:
+  search_and_remove:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        npm install @octokit/request@5
+        npm install @octokit/graphql@4
+
+    - name: Remove 'agenda' label from discussion
+      uses: actions/github-script@v6
+      env: 
+        MY_TOKEN: ${{ secrets.PAT_KEY }}
+      with: 
+        script: |
+          const { request } = require('@octokit/request');
+          const { graphql } = require('@octokit/graphql');
+        
+          const accessToken = process.env.MY_TOKEN;
+          const owner = 'Adity20';
+          const repo = 'testing';
+          const issueNumber = 2;
+          const appendLabel = 'agenda';
+        
+          async function removeLabel() {
+          try {
+            // Get the ID of the 'agenda' label
+            const labelResponse = await request(`GET /repos/${owner}/${repo}/labels/${appendLabel}`, {
+              headers: {
+                authorization: `token ${accessToken}`,
+                accept: 'application/vnd.github.v3+json',
+              },
+            });
+            const labelId = labelResponse.data.node_id;
+        
+            // Remove the 'agenda' label from the issue
+            const mutation = `
+              mutation ($input: RemoveLabelsFromLabelableInput!) {
+                removeLabelsFromLabelable(input: $input) {
+                  clientMutationId
+                }
+              }
+            `;
+            const variables = {
+              input: {
+                labelIds: [labelId],
+                labelableId: `MDU6SXNzdWU${issueNumber}`
+              }
+            };
+            await graphql(mutation, variables, {
+              headers: {
+                authorization: `token ${accessToken}`,
+              },
+            });
+            console.log('Label removed successfully.');
+          } catch (error) {
+            console.error('Error removing label:', error.message);
+          }
+          }
+        
+          removeLabel();
+  
