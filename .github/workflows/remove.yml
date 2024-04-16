@@ -33,7 +33,7 @@ jobs:
           const accessToken = process.env.MY_TOKEN;
           const owner = 'Adity20';
           const repo = 'testing';
-          const issueNumber = 2;
+          const issueNumber = 1;
           const appendLabel = 'agenda';
         
           async function removeLabel() {
